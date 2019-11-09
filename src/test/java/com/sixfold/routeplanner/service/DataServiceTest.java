@@ -1,11 +1,10 @@
 package com.sixfold.routeplanner.service;
 
-import com.sixfold.routeplanner.dto.Airport;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import javax.annotation.Resource;
-import java.util.List;
+import java.io.IOException;
 
 @SpringBootTest
 public class DataServiceTest {
@@ -17,7 +16,7 @@ public class DataServiceTest {
     private RouteService routeService;
 
     @Test
-    public void test() {
+    public void test() throws IOException {
         dataService.saveAirportData();
     }
 }

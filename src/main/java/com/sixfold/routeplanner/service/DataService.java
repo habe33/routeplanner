@@ -1,30 +1,36 @@
 package com.sixfold.routeplanner.service;
 
 import com.sixfold.routeplanner.dto.Airport;
-import com.sixfold.routeplanner.repository.AirportRepository;
+import com.sixfold.routeplanner.repository.GraphRepository;
+import com.sixfold.routeplanner.utils.HaversinDistance;
 import lombok.extern.log4j.Log4j2;
+import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.Resource;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Scanner;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Log4j2
 @Service
 public class DataService {
 
+    public static final String AIRPORT_DATA_CSV = "C:/Temp/new.csv";
     @Value("${app.data.url}")
     private String dataUrl;
 
-    private AirportRepository repository;
+    private GraphRepository repository;
+
+    @Resource
+    private GraphDatabaseService graphDb;
 
     public final static String AIRPORT_CACHE = "airportData";
     private final static int AIRPORT_IATA_INDEX = 9;
@@ -32,22 +38,45 @@ public class DataService {
     private final static int AIRPORT_LONGITUDE_INDEX = 12;
 
     @Autowired
-    public DataService(AirportRepository repository) {
+    public DataService(GraphRepository repository) {
         this.repository = repository;
     }
 
     public void saveAirportData() {
-        log.info("Saving airport data to DB");
+        log.info("Creating graph");
         List<Airport> data = getAirportData();
-        repository.saveAll(data);
-        log.info("Creating relationships");
-        repository.createRelationships();
-//        data.forEach(node -> {
-//            data.stream().filter(n -> !node.getCode().equals(n.getCode())).forEach(n -> {
-//                repository.createRelationships(node.getCode(), n.getCode());
-//            });
-//        });
-        log.info("Finished creating relationships");
+        writeRelationshipsToCsv(data);
+        log.info("Inserting graph");
+        graphDb.execute("LOAD CSV FROM 'file:///C:/Temp/new.csv' AS line " +
+                "            MERGE (n:Airport {iataCode : line[0]}) " +
+                "            MERGE (m:Airport {iataCode : line[1]}) " +
+                "            MERGE (n)-[:FLY {dist : toFloat(line[2])}]->(m);");
+        log.info("Finished creating graph");
+        System.out.println(repository.findAll());
+        Result res = graphDb.execute("MATCH (start:Airport{iataCode:'OCA'}), (end:Airport{iataCode:'WLR'}) " +
+                "CALL algo.kShortestPaths.stream(start, end, 5, 'dist', {}) " +
+                "YIELD index, nodeIds, costs " +
+                "RETURN [node in algo.getNodesById(nodeIds) | node.name] AS places, " +
+                "      costs, " +
+                "       toFloat(reduce(acc = 0.0, cost in costs | acc + cost)) AS totalCost");
+        String test[] = {"places", "costs", "totalCost"};
+        Map<String, Object> obj = new LinkedHashMap();
+        while(res.hasNext()) {
+            Map<String, Object> row = res.next();
+            for (String t:test) {
+                obj.put(t, null);
+            }
+            for(Map.Entry<String, Object> col : row.entrySet()) {
+                obj.put(col.getKey(),col.getValue());
+            }
+        }
+        res.close();
+        for (Map.Entry<String, Object> entry : obj.entrySet()) {
+            System.out.println(entry.getKey() + ":" + entry.getValue().toString());
+        }
+
+        //System.out.println(repository.getKShortestPaths("OCA", "WLR", 5));
+        log.info("enough");
     }
 
     @Cacheable(value = AIRPORT_CACHE, key = "#root.methodName")
@@ -57,7 +86,11 @@ public class DataService {
         try {
             URL content = new URL(dataUrl);
             Scanner inputStream = getInputStream(content);
+            int counter = 0;
             while (inputStream.hasNext()) {
+                if (counter == 10) {
+                    break;
+                }
                 String[] values = getSplittedValues(inputStream);
                 if (values.length != 13) {
                     continue;
@@ -70,6 +103,7 @@ public class DataService {
                 }
                 Airport node = new Airport(iataCode, Float.parseFloat(latitude), Float.parseFloat(longitude));
                 airportData.add(node);
+                counter++;
             }
         } catch (MalformedURLException e) {
             log.error("Could not get content from {}", dataUrl);
@@ -81,8 +115,32 @@ public class DataService {
         return airportData.stream().distinct().collect(Collectors.toList());
     }
 
-    public Optional<Airport> getNode(String iataCode) {
-        return getAirportData().stream().filter(d -> d.getCode().equals(iataCode)).findAny();
+    private void writeRelationshipsToCsv(List<Airport> data) {
+        log.info("Writing relationships to CSV");
+        try {
+            FileWriter csvWriter = new FileWriter("C:\\Temp\\new.csv");
+            for (Airport node : data) {
+                for (Airport n : data) {
+                    if (!node.getCode().equals(n.getCode())) {
+                        writeAirportData(csvWriter, node, n);
+                    }
+                }
+            }
+            csvWriter.flush();
+            csvWriter.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        log.info("Finished writing relationships");
+    }
+
+    private void writeAirportData(FileWriter csvWriter, Airport node, Airport n) throws IOException {
+        csvWriter.append(n.getCode())
+                .append(",")
+                .append(node.getCode())
+                .append(",")
+                .append(String.format("%.2f", HaversinDistance.distance(node.getLatitude(), node.getLongitude(), n.getLatitude(), n.getLongitude())))
+                .append("\n");
     }
 
     private Scanner getInputStream(URL content) throws IOException {
