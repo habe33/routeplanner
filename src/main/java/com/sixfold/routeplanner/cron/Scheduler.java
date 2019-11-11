@@ -20,8 +20,8 @@ public class Scheduler {
     }
 
     @Scheduled(initialDelay = 0L, fixedRate = 4 * 60 * 60 * 1000)
-    public void getAirportData() {
-        dataService.saveAirportDataToGraph();
+    public void generateGraph() {
+        dataService.generateGraph();
     }
 
 }

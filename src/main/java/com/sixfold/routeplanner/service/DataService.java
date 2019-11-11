@@ -25,7 +25,8 @@ public class DataService {
     private String numOfNodes;
     private Neo4jRepository repository;
 
-    private final static String AIRPORT_DATA_CSV = "C:/Temp/new.csv";
+    private final static String AIRPORT_RELATIONSHIPS_CSV = "C:/Temp/relationships.csv";
+    private final static String AIRPORT_NODES_CSV = "C:/Temp/nodes.csv";
     private final static int AIRPORT_IATA_INDEX = 9;
     private final static int AIRPORT_LATITUDE_INDEX = 11;
     private final static int AIRPORT_LONGITUDE_INDEX = 12;
@@ -35,14 +36,15 @@ public class DataService {
         this.repository = repository;
     }
 
-    public void saveAirportDataToGraph() {
+    public void generateGraph() {
         List<Airport> data = getAirportData();
+        writeNodesToCsv(data);
         writeRelationshipsToCsv(data);
-        repository.insertGraph(AIRPORT_DATA_CSV);
+        repository.insertGraph(AIRPORT_NODES_CSV, AIRPORT_RELATIONSHIPS_CSV);
+        //repository.getKShortestPaths("GDH", "QNY");
     }
 
     private List<Airport> getAirportData() {
-        log.info("Loading airport data from {}", dataUrl);
         List<Airport> airportData = new ArrayList<>();
         try {
             URL content = new URL(dataUrl);
@@ -50,7 +52,7 @@ public class DataService {
             int counter = 0;
             while (inputStream.hasNext()) {
                 if (counter == Integer.parseInt(numOfNodes)) {
-                    log.debug("Loaded {} from CSV", numOfNodes);
+                    log.debug("Loaded {} nodes from {}", numOfNodes, dataUrl);
                     break;
                 }
                 String[] values = getSplittedValues(inputStream);
@@ -72,21 +74,35 @@ public class DataService {
         } catch (IOException e) {
             log.error("Could not open content stream: {}", e.getMessage());
         }
-        log.info("Created {} nodes", airportData.size());
-        return airportData.stream().distinct().collect(Collectors.toList());
+        airportData = airportData.stream().distinct().collect(Collectors.toList());
+        return airportData;
     }
 
     private boolean isCorrectLength(String[] values) {
         return values.length == 13;
     }
 
-    private void writeRelationshipsToCsv(List<Airport> data) {
-        log.info("Writing relationships to CSV");
+    private void writeNodesToCsv(List<Airport> data) {
+        log.debug("Writing nodes to {}", AIRPORT_NODES_CSV);
         try {
-            FileWriter csvWriter = new FileWriter(AIRPORT_DATA_CSV);
+            FileWriter csvWriter = new FileWriter(AIRPORT_NODES_CSV);
+            for (Airport node : data) {
+                writeNodeData(csvWriter, node);
+            }
+            csvWriter.flush();
+            csvWriter.close();
+        } catch (IOException e) {
+            log.error("Error writing data to file {} ", AIRPORT_NODES_CSV);
+        }
+    }
+
+    private void writeRelationshipsToCsv(List<Airport> data) {
+        log.debug("Writing relationships to {}", AIRPORT_RELATIONSHIPS_CSV);
+        try {
+            FileWriter csvWriter = new FileWriter(AIRPORT_RELATIONSHIPS_CSV);
             for (Airport node : data) {
                 for (Airport n : data) {
-                    if (!node.getCode().equals(n.getCode())) {
+                    if (!node.equals(n)) {
                         writeAirportData(csvWriter, node, n);
                     }
                 }
@@ -94,9 +110,12 @@ public class DataService {
             csvWriter.flush();
             csvWriter.close();
         } catch (IOException e) {
-            e.printStackTrace();
+            log.error("Error writing data to file {} ", AIRPORT_RELATIONSHIPS_CSV);
         }
-        log.info("Finished writing relationships");
+    }
+
+    private void writeNodeData(FileWriter csvWriter, Airport node) throws IOException {
+        csvWriter.append(node.getCode()).append("\n");
     }
 
     private void writeAirportData(FileWriter csvWriter, Airport node, Airport n) throws IOException {
@@ -120,19 +139,19 @@ public class DataService {
     }
 
     private boolean isValidIataCode(String iataCode) {
-        return iataCode != null && !iataCode.isBlank();
+        return iataCode != null && !iataCode.isEmpty();
     }
 
     private boolean isValidLatitude(String latitude) {
-        return latitude != null && !latitude.isBlank();
+        return latitude != null && !latitude.isEmpty();
     }
 
     private boolean isValidLongitude(String longitude) {
-        return longitude != null && !longitude.isBlank();
+        return longitude != null && !longitude.isEmpty();
     }
 
     private String[] getSplittedValues(Scanner inputStream) {
         String data = inputStream.next();
-        return data.replace("\"", "").strip().split(",");
+        return data.replace("\"", "").replace(" ", "").split(",");
     }
 }

@@ -16,19 +16,20 @@ public class Neo4jRepository {
     @Resource
     private GraphDatabaseService graphDb;
 
-    public void insertGraph(String filePath) {
-        insertNodes(filePath);
-        insertRelationships(filePath);
+    public void insertGraph(String nodesPath, String relationshipsPath) {
+        insertNodes(nodesPath);
+        insertRelationships(relationshipsPath);
+        log.info("Finished generating graph!");
     }
 
     public void getKShortestPaths(String startCode, String endCode) {
-        String query = "MATCH ( " +
+        String query = "MATCH " +
                 "(start:Airport{iataCode:'" + startCode + "'}), " +
                 "(end:Airport{iataCode:'" + endCode + "'}) " +
                 "CALL algo.kShortestPaths.stream(start, end, 10, 'dist', {}) " +
                 "YIELD index, nodeIds, costs " +
-                "WHERE length(costs) = 4 " +
-                "RETURN [node in algo.getNodesById(nodeIds) | node.name] AS places, " +
+                "WHERE length(costs) = 6 " +
+                "RETURN [node in algo.getNodesById(nodeIds) | node.iataCode] AS places, " +
                 "costs, " +
                 "toFloat(reduce(acc = 0.0, cost in costs | acc + cost)) AS totalCost " +
                 "ORDER BY totalCost " +
@@ -42,7 +43,7 @@ public class Neo4jRepository {
         }
     }
 
-    private Map<String, Object> getResultMap(Result res, String [] columns) {
+    private Map<String, Object> getResultMap(Result res, String[] columns) {
         Map<String, Object> obj = new LinkedHashMap<>();
         while (res.hasNext()) {
             Map<String, Object> row = res.next();
@@ -57,17 +58,18 @@ public class Neo4jRepository {
     }
 
     private void insertRelationships(String filePath) {
-        log.info("Inserting relationships");
-        graphDb.execute("LOAD CSV FROM 'file:///" + filePath + "' AS line " +
+        log.info("Inserting relationships to DB");
+        graphDb.execute("USING PERIODIC COMMIT 500 " +
+                "LOAD CSV FROM 'file:///" + filePath + "' AS line " +
                 "MATCH (n:Airport {iataCode : line[0]}) " +
                 "MATCH (m:Airport {iataCode : line[1]}) " +
-                "MERGE (n)-[:FLY {dist : toFloat(line[2])}]->(m); ");
+                "CREATE (n)-[:FLY {dist : toFloat(line[2])}]->(m); ");
     }
 
     private void insertNodes(String filePath) {
-        log.info("Inserting nodes");
-        graphDb.execute("LOAD CSV FROM 'file:///" + filePath + "' AS line " +
-                "MERGE (n:Airport {iataCode : line[0]}) " +
-                "MERGE (m:Airport {iataCode : line[1]}); ");
+        log.info("Inserting nodes to DB");
+        graphDb.execute("USING PERIODIC COMMIT 500 " +
+                "LOAD CSV FROM 'file:///" + filePath + "' AS line " +
+                "CREATE (n:Airport {iataCode : line[0]}); ");
     }
 }

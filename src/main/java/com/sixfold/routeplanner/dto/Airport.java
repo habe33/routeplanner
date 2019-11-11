@@ -2,29 +2,33 @@ package com.sixfold.routeplanner.dto;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import org.neo4j.ogm.annotation.GeneratedValue;
-import org.neo4j.ogm.annotation.Id;
-import org.neo4j.ogm.annotation.NodeEntity;
-import org.neo4j.ogm.annotation.Property;
+
+import java.util.Objects;
 
 @Data
-@NodeEntity
 @NoArgsConstructor
 public class Airport {
 
-    @Id
-    @GeneratedValue
-    private Long id;
-    @Property(name = "iataCode")
     private String code;
-    @Property(name = "lat")
     private float latitude;
-    @Property(name = "long")
     private float longitude;
 
     public Airport(String code, float latitude, float longitude) {
         this.code = code;
         this.latitude = latitude;
         this.longitude = longitude;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Airport airport = (Airport) o;
+        return Objects.equals(getCode(), airport.getCode());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getCode());
     }
 }

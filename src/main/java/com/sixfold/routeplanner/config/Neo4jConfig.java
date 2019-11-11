@@ -4,7 +4,10 @@ import lombok.extern.log4j.Log4j2;
 import org.neo4j.graphalgo.GetNodeFunc;
 import org.neo4j.graphalgo.KShortestPathsProc;
 import org.neo4j.graphdb.GraphDatabaseService;
+import org.neo4j.graphdb.Label;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
+import org.neo4j.graphdb.factory.GraphDatabaseSettings;
 import org.neo4j.internal.kernel.api.exceptions.KernelException;
 import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
@@ -43,8 +46,19 @@ public class Neo4jConfig {
 
     @Bean
     public GraphDatabaseService graphDb() {
-        return new GraphDatabaseFactory()
-                .newEmbeddedDatabaseBuilder(Paths.get(dbLocation).toFile()).newGraphDatabase();
+        GraphDatabaseService service = new GraphDatabaseFactory()
+                .newEmbeddedDatabaseBuilder(Paths.get(dbLocation).toFile())
+                .setConfig(GraphDatabaseSettings.procedure_unrestricted, "algo.*,apoc.*")
+                .newGraphDatabase();
+        createAirportNodeIndex(service);
+        return service;
+    }
+
+    private void createAirportNodeIndex(GraphDatabaseService service) {
+        try (Transaction tx = service.beginTx()) {
+            service.schema().indexFor(Label.label("Airport")).on("iataCode").create();
+            tx.success();
+        }
     }
 
     @Bean
