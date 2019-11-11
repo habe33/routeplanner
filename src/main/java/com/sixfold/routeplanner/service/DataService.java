@@ -23,10 +23,12 @@ public class DataService {
     private String dataUrl;
     @Value("${app.data.nodes}")
     private String numOfNodes;
-    private Neo4jRepository repository;
+    @Value("{app.data.csv.path.relationships}")
+    private String airportRelationshipsCsvPath;
+    @Value("{app.data.csv.path.nodes}")
+    private String airportNodesCsvPath;
 
-    private final static String AIRPORT_RELATIONSHIPS_CSV = "C:/Temp/relationships.csv";
-    private final static String AIRPORT_NODES_CSV = "C:/Temp/nodes.csv";
+    private Neo4jRepository repository;
     private final static int AIRPORT_IATA_INDEX = 9;
     private final static int AIRPORT_LATITUDE_INDEX = 11;
     private final static int AIRPORT_LONGITUDE_INDEX = 12;
@@ -40,7 +42,7 @@ public class DataService {
         List<Airport> data = getAirportData();
         writeNodesToCsv(data);
         writeRelationshipsToCsv(data);
-        repository.insertGraph(AIRPORT_NODES_CSV, AIRPORT_RELATIONSHIPS_CSV);
+        repository.insertGraph(airportNodesCsvPath, airportRelationshipsCsvPath);
         //repository.getKShortestPaths("GDH", "QNY");
     }
 
@@ -83,23 +85,23 @@ public class DataService {
     }
 
     private void writeNodesToCsv(List<Airport> data) {
-        log.debug("Writing nodes to {}", AIRPORT_NODES_CSV);
+        log.debug("Writing nodes to {}", airportNodesCsvPath);
         try {
-            FileWriter csvWriter = new FileWriter(AIRPORT_NODES_CSV);
+            FileWriter csvWriter = new FileWriter(airportNodesCsvPath);
             for (Airport node : data) {
                 writeNodeData(csvWriter, node);
             }
             csvWriter.flush();
             csvWriter.close();
         } catch (IOException e) {
-            log.error("Error writing data to file {} ", AIRPORT_NODES_CSV);
+            log.error("Error writing data to file {} ", airportNodesCsvPath);
         }
     }
 
     private void writeRelationshipsToCsv(List<Airport> data) {
-        log.debug("Writing relationships to {}", AIRPORT_RELATIONSHIPS_CSV);
+        log.debug("Writing relationships to {}", airportRelationshipsCsvPath);
         try {
-            FileWriter csvWriter = new FileWriter(AIRPORT_RELATIONSHIPS_CSV);
+            FileWriter csvWriter = new FileWriter(airportRelationshipsCsvPath);
             for (Airport node : data) {
                 for (Airport n : data) {
                     if (!node.equals(n)) {
@@ -110,7 +112,7 @@ public class DataService {
             csvWriter.flush();
             csvWriter.close();
         } catch (IOException e) {
-            log.error("Error writing data to file {} ", AIRPORT_RELATIONSHIPS_CSV);
+            log.error("Error writing data to file {} ", airportRelationshipsCsvPath);
         }
     }
 
