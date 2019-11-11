@@ -15,6 +15,8 @@ public class RouteService {
         this.dataService = dataService;
     }
 
-
+    public void getShortestPath() {
+        //dataService.getShortestPath();
+    }
 
 }

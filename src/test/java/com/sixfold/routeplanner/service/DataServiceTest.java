@@ -17,6 +17,6 @@ public class DataServiceTest {
 
     @Test
     public void test() throws IOException {
-        dataService.saveAirportData();
+        dataService.saveAirportDataToGraph();
     }
 }

@@ -10,6 +10,7 @@ import org.neo4j.kernel.impl.proc.Procedures;
 import org.neo4j.kernel.internal.GraphDatabaseAPI;
 import org.neo4j.ogm.drivers.embedded.driver.EmbeddedDriver;
 import org.neo4j.ogm.session.SessionFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
@@ -23,6 +24,9 @@ import java.nio.file.Paths;
 @EnableNeo4jRepositories("com.sixfold.routeplanner")
 @EnableTransactionManagement
 public class Neo4jConfig {
+
+    @Value("${app.neo4j.db.location}")
+    private String dbLocation;
 
     @Bean
     public SessionFactory sessionFactory() {
@@ -40,7 +44,7 @@ public class Neo4jConfig {
     @Bean
     public GraphDatabaseService graphDb() {
         return new GraphDatabaseFactory()
-                .newEmbeddedDatabaseBuilder(Paths.get("C:/Temp/graph.db").toFile()).newGraphDatabase();
+                .newEmbeddedDatabaseBuilder(Paths.get(dbLocation).toFile()).newGraphDatabase();
     }
 
     @Bean

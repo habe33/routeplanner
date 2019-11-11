@@ -1,17 +1,13 @@
 package com.sixfold.routeplanner.service;
 
 import com.sixfold.routeplanner.dto.Airport;
-import com.sixfold.routeplanner.repository.GraphRepository;
+import com.sixfold.routeplanner.repository.Neo4jRepository;
 import com.sixfold.routeplanner.utils.HaversinDistance;
 import lombok.extern.log4j.Log4j2;
-import org.neo4j.graphdb.GraphDatabaseService;
-import org.neo4j.graphdb.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 
-import javax.annotation.Resource;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -23,64 +19,29 @@ import java.util.stream.Collectors;
 @Service
 public class DataService {
 
-    public static final String AIRPORT_DATA_CSV = "C:/Temp/new.csv";
     @Value("${app.data.url}")
     private String dataUrl;
+    @Value("${app.data.nodes}")
+    private String numOfNodes;
+    private Neo4jRepository repository;
 
-    private GraphRepository repository;
-
-    @Resource
-    private GraphDatabaseService graphDb;
-
-    public final static String AIRPORT_CACHE = "airportData";
+    private final static String AIRPORT_DATA_CSV = "C:/Temp/new.csv";
     private final static int AIRPORT_IATA_INDEX = 9;
     private final static int AIRPORT_LATITUDE_INDEX = 11;
     private final static int AIRPORT_LONGITUDE_INDEX = 12;
 
     @Autowired
-    public DataService(GraphRepository repository) {
+    public DataService(Neo4jRepository repository) {
         this.repository = repository;
     }
 
-    public void saveAirportData() {
-        log.info("Creating graph");
+    public void saveAirportDataToGraph() {
         List<Airport> data = getAirportData();
         writeRelationshipsToCsv(data);
-        log.info("Inserting graph");
-        graphDb.execute("LOAD CSV FROM 'file:///C:/Temp/new.csv' AS line " +
-                "            MERGE (n:Airport {iataCode : line[0]}) " +
-                "            MERGE (m:Airport {iataCode : line[1]}) " +
-                "            MERGE (n)-[:FLY {dist : toFloat(line[2])}]->(m);");
-        log.info("Finished creating graph");
-        System.out.println(repository.findAll());
-        Result res = graphDb.execute("MATCH (start:Airport{iataCode:'OCA'}), (end:Airport{iataCode:'WLR'}) " +
-                "CALL algo.kShortestPaths.stream(start, end, 5, 'dist', {}) " +
-                "YIELD index, nodeIds, costs " +
-                "RETURN [node in algo.getNodesById(nodeIds) | node.name] AS places, " +
-                "      costs, " +
-                "       toFloat(reduce(acc = 0.0, cost in costs | acc + cost)) AS totalCost");
-        String test[] = {"places", "costs", "totalCost"};
-        Map<String, Object> obj = new LinkedHashMap();
-        while(res.hasNext()) {
-            Map<String, Object> row = res.next();
-            for (String t:test) {
-                obj.put(t, null);
-            }
-            for(Map.Entry<String, Object> col : row.entrySet()) {
-                obj.put(col.getKey(),col.getValue());
-            }
-        }
-        res.close();
-        for (Map.Entry<String, Object> entry : obj.entrySet()) {
-            System.out.println(entry.getKey() + ":" + entry.getValue().toString());
-        }
-
-        //System.out.println(repository.getKShortestPaths("OCA", "WLR", 5));
-        log.info("enough");
+        repository.insertGraph(AIRPORT_DATA_CSV);
     }
 
-    @Cacheable(value = AIRPORT_CACHE, key = "#root.methodName")
-    public List<Airport> getAirportData() {
+    private List<Airport> getAirportData() {
         log.info("Loading airport data from {}", dataUrl);
         List<Airport> airportData = new ArrayList<>();
         try {
@@ -88,11 +49,12 @@ public class DataService {
             Scanner inputStream = getInputStream(content);
             int counter = 0;
             while (inputStream.hasNext()) {
-                if (counter == 10) {
+                if (counter == Integer.parseInt(numOfNodes)) {
+                    log.debug("Loaded {} from CSV", numOfNodes);
                     break;
                 }
                 String[] values = getSplittedValues(inputStream);
-                if (values.length != 13) {
+                if (!isCorrectLength(values)) {
                     continue;
                 }
                 String iataCode = values[AIRPORT_IATA_INDEX];
@@ -110,15 +72,18 @@ public class DataService {
         } catch (IOException e) {
             log.error("Could not open content stream: {}", e.getMessage());
         }
-        log.info("Loaded data successfully");
         log.info("Created {} nodes", airportData.size());
         return airportData.stream().distinct().collect(Collectors.toList());
+    }
+
+    private boolean isCorrectLength(String[] values) {
+        return values.length == 13;
     }
 
     private void writeRelationshipsToCsv(List<Airport> data) {
         log.info("Writing relationships to CSV");
         try {
-            FileWriter csvWriter = new FileWriter("C:\\Temp\\new.csv");
+            FileWriter csvWriter = new FileWriter(AIRPORT_DATA_CSV);
             for (Airport node : data) {
                 for (Airport n : data) {
                     if (!node.getCode().equals(n.getCode())) {
