@@ -1,5 +1,6 @@
 package com.sixfold.routeplanner.repository;
 
+import com.sixfold.routeplanner.dto.ShortestPathResponse;
 import lombok.extern.log4j.Log4j2;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
@@ -22,7 +23,8 @@ public class Neo4jRepository {
         log.info("Finished generating graph!");
     }
 
-    public void getKShortestPaths(String startCode, String endCode) {
+    public ShortestPathResponse getKShortestPaths(String startCode, String endCode) {
+        log.info("Calculating shortest path");
         String query = "MATCH " +
                 "(start:Airport{iataCode:'" + startCode + "'}), " +
                 "(end:Airport{iataCode:'" + endCode + "'}) " +
@@ -36,11 +38,26 @@ public class Neo4jRepository {
                 "LIMIT 1";
         Result res = graphDb.execute(query);
         String[] columns = {"places", "costs", "totalCost"};
-        Map<String, Object> obj = getResultMap(res, columns);
+        Map<String, Object> objMap = getResultMap(res, columns);
         res.close();
-        for (Map.Entry<String, Object> entry : obj.entrySet()) {
+        return mapToResponse(objMap);
+    }
+
+    public void deleteGraph() {
+        graphDb.execute("MATCH (n) " +
+                "DETACH DELETE n");
+    }
+
+    private ShortestPathResponse mapToResponse(Map<String, Object> objMap) {
+        ShortestPathResponse resp = new ShortestPathResponse();
+        resp.setCosts((String[]) objMap.get("costs"));
+        resp.setPlaces((String[]) objMap.get("places"));
+        resp.setTotalCost((double) objMap.get("totalCost"));
+        for (Map.Entry<String, Object> entry : objMap.entrySet()) {
             System.out.println(entry.getKey() + ":" + entry.getValue().toString());
         }
+        System.out.println(resp);
+        return resp;
     }
 
     private Map<String, Object> getResultMap(Result res, String[] columns) {

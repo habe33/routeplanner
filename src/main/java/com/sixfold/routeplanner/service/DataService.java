@@ -23,15 +23,15 @@ public class DataService {
     private String dataUrl;
     @Value("${app.data.nodes}")
     private String numOfNodes;
-    @Value("{app.data.csv.path.relationships}")
+    @Value("${app.data.csv.path.relationships}")
     private String airportRelationshipsCsvPath;
-    @Value("{app.data.csv.path.nodes}")
+    @Value("${app.data.csv.path.nodes}")
     private String airportNodesCsvPath;
 
     private Neo4jRepository repository;
-    private final static int AIRPORT_IATA_INDEX = 9;
-    private final static int AIRPORT_LATITUDE_INDEX = 11;
-    private final static int AIRPORT_LONGITUDE_INDEX = 12;
+    private static final int AIRPORT_IATA_INDEX = 9;
+    private static final int AIRPORT_LATITUDE_INDEX = 11;
+    private static final int AIRPORT_LONGITUDE_INDEX = 12;
 
     @Autowired
     public DataService(Neo4jRepository repository) {
@@ -42,8 +42,11 @@ public class DataService {
         List<Airport> data = getAirportData();
         writeNodesToCsv(data);
         writeRelationshipsToCsv(data);
+        insertGraph();
+    }
+
+    private void insertGraph() {
         repository.insertGraph(airportNodesCsvPath, airportRelationshipsCsvPath);
-        //repository.getKShortestPaths("GDH", "QNY");
     }
 
     private List<Airport> getAirportData() {
@@ -58,18 +61,16 @@ public class DataService {
                     break;
                 }
                 String[] values = getSplittedValues(inputStream);
-                if (!isCorrectLength(values)) {
-                    continue;
+                if (isCorrectLength(values)) {
+                    String iataCode = values[AIRPORT_IATA_INDEX];
+                    String latitude = values[AIRPORT_LATITUDE_INDEX];
+                    String longitude = values[AIRPORT_LONGITUDE_INDEX];
+                    if (isValidValues(iataCode, latitude, longitude)) {
+                        Airport node = new Airport(iataCode, Float.parseFloat(latitude), Float.parseFloat(longitude));
+                        airportData.add(node);
+                        counter++;
+                    }
                 }
-                String iataCode = values[AIRPORT_IATA_INDEX];
-                String latitude = values[AIRPORT_LATITUDE_INDEX];
-                String longitude = values[AIRPORT_LONGITUDE_INDEX];
-                if (!isValidValues(iataCode, latitude, longitude)) {
-                    continue;
-                }
-                Airport node = new Airport(iataCode, Float.parseFloat(latitude), Float.parseFloat(longitude));
-                airportData.add(node);
-                counter++;
             }
         } catch (MalformedURLException e) {
             log.error("Could not get content from {}", dataUrl);
@@ -86,13 +87,10 @@ public class DataService {
 
     private void writeNodesToCsv(List<Airport> data) {
         log.debug("Writing nodes to {}", airportNodesCsvPath);
-        try {
-            FileWriter csvWriter = new FileWriter(airportNodesCsvPath);
+        try (FileWriter csvWriter = new FileWriter(airportNodesCsvPath)) {
             for (Airport node : data) {
                 writeNodeData(csvWriter, node);
             }
-            csvWriter.flush();
-            csvWriter.close();
         } catch (IOException e) {
             log.error("Error writing data to file {} ", airportNodesCsvPath);
         }
@@ -100,17 +98,14 @@ public class DataService {
 
     private void writeRelationshipsToCsv(List<Airport> data) {
         log.debug("Writing relationships to {}", airportRelationshipsCsvPath);
-        try {
-            FileWriter csvWriter = new FileWriter(airportRelationshipsCsvPath);
+        try (FileWriter csvWriter = new FileWriter(airportRelationshipsCsvPath)) {
             for (Airport node : data) {
                 for (Airport n : data) {
-                    if (!node.equals(n)) {
+                    if (!node.getCode().equals(n.getCode())) {
                         writeAirportData(csvWriter, node, n);
                     }
                 }
             }
-            csvWriter.flush();
-            csvWriter.close();
         } catch (IOException e) {
             log.error("Error writing data to file {} ", airportRelationshipsCsvPath);
         }
@@ -118,6 +113,7 @@ public class DataService {
 
     private void writeNodeData(FileWriter csvWriter, Airport node) throws IOException {
         csvWriter.append(node.getCode()).append("\n");
+        csvWriter.flush();
     }
 
     private void writeAirportData(FileWriter csvWriter, Airport node, Airport n) throws IOException {
@@ -127,6 +123,7 @@ public class DataService {
                 .append(",")
                 .append(String.format("%.2f", HaversinDistance.distance(node.getLatitude(), node.getLongitude(), n.getLatitude(), n.getLongitude())))
                 .append("\n");
+        csvWriter.flush();
     }
 
     private Scanner getInputStream(URL content) throws IOException {

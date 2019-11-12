@@ -5,7 +5,6 @@ public class HaversinDistance {
     private static final int EARTH_RADIUS = 6371;
 
     public static double distance(double startLat, double startLong, double endLat, double endLong) {
-
         double dLat = Math.toRadians((endLat - startLat));
         double dLong = Math.toRadians((endLong - startLong));
 
