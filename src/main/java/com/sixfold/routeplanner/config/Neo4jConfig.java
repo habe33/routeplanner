@@ -54,16 +54,16 @@ public class Neo4jConfig {
         return service;
     }
 
+    @Bean
+    public Neo4jTransactionManager transactionManager() {
+        return new Neo4jTransactionManager(sessionFactory());
+    }
+
     private void createAirportNodeIndex(GraphDatabaseService service) {
         try (Transaction tx = service.beginTx()) {
             service.schema().indexFor(Label.label("Airport")).on("iataCode").create();
             tx.success();
         }
-    }
-
-    @Bean
-    public Neo4jTransactionManager transactionManager() {
-        return new Neo4jTransactionManager(sessionFactory());
     }
 
     private void registerProcedure(GraphDatabaseService graphDb, Class<?>... procedures) throws KernelException {

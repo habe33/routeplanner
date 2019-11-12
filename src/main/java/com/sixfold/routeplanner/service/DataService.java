@@ -2,7 +2,7 @@ package com.sixfold.routeplanner.service;
 
 import com.sixfold.routeplanner.dto.Airport;
 import com.sixfold.routeplanner.repository.Neo4jRepository;
-import com.sixfold.routeplanner.utils.HaversinDistance;
+import com.sixfold.routeplanner.utils.HaversineDistance;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -121,7 +121,7 @@ public class DataService {
                 .append(",")
                 .append(node.getCode())
                 .append(",")
-                .append(String.format("%.2f", HaversinDistance.distance(node.getLatitude(), node.getLongitude(), n.getLatitude(), n.getLongitude())))
+                .append(String.format("%.2f", HaversineDistance.distance(node.getLatitude(), node.getLongitude(), n.getLatitude(), n.getLongitude())))
                 .append("\n");
         csvWriter.flush();
     }

@@ -8,7 +8,7 @@ import org.springframework.http.HttpStatus;
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class AppStatusError {
+public class AppError {
 
     private HttpStatus status;
     private String appStatus;

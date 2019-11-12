@@ -1,21 +1,28 @@
 package com.sixfold.routeplanner.repository;
 
 import com.sixfold.routeplanner.dto.ShortestPathResponse;
+import com.sixfold.routeplanner.exceptions.ResultNotFoundException;
 import lombok.extern.log4j.Log4j2;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @Log4j2
 @Component
 public class Neo4jRepository {
 
-    @Resource
+    @Value("${app.algo.k.paths}")
+    private String numOfKPaths;
     private GraphDatabaseService graphDb;
+
+    public Neo4jRepository(GraphDatabaseService graphDb) {
+        this.graphDb = graphDb;
+    }
 
     public void insertGraph(String nodesPath, String relationshipsPath) {
         insertNodes(nodesPath);
@@ -23,21 +30,24 @@ public class Neo4jRepository {
         log.info("Finished generating graph!");
     }
 
-    public ShortestPathResponse getKShortestPaths(String startCode, String endCode) {
+    public ShortestPathResponse getKShortestPaths(String startCode, String endCode, int stops) throws ResultNotFoundException {
         log.info("Calculating shortest path");
         String query = "MATCH " +
                 "(start:Airport{iataCode:'" + startCode + "'}), " +
                 "(end:Airport{iataCode:'" + endCode + "'}) " +
-                "CALL algo.kShortestPaths.stream(start, end, 10, 'dist', {}) " +
+                "CALL algo.kShortestPaths.stream(start, end, " + numOfKPaths + ", 'dist', {}) " +
                 "YIELD index, nodeIds, costs " +
-                "WHERE length(costs) = 6 " +
-                "RETURN [node in algo.getNodesById(nodeIds) | node.iataCode] AS places, " +
+                "WHERE length(costs) = " + stops + " " +
+                "RETURN [node in algo.getNodesById(nodeIds) | node.iataCode] AS airports, " +
                 "costs, " +
                 "toFloat(reduce(acc = 0.0, cost in costs | acc + cost)) AS totalCost " +
                 "ORDER BY totalCost " +
                 "LIMIT 1";
         Result res = graphDb.execute(query);
-        String[] columns = {"places", "costs", "totalCost"};
+        if (!res.hasNext()) {
+            throw new ResultNotFoundException("Path not found for " + startCode + "->" + endCode);
+        }
+        String[] columns = {"airports", "costs", "totalCost"};
         Map<String, Object> objMap = getResultMap(res, columns);
         res.close();
         return mapToResponse(objMap);
@@ -50,13 +60,9 @@ public class Neo4jRepository {
 
     private ShortestPathResponse mapToResponse(Map<String, Object> objMap) {
         ShortestPathResponse resp = new ShortestPathResponse();
-        resp.setCosts((String[]) objMap.get("costs"));
-        resp.setPlaces((String[]) objMap.get("places"));
-        resp.setTotalCost((double) objMap.get("totalCost"));
-        for (Map.Entry<String, Object> entry : objMap.entrySet()) {
-            System.out.println(entry.getKey() + ":" + entry.getValue().toString());
-        }
-        System.out.println(resp);
+        resp.setCosts((List<Double>) objMap.get("costs"));
+        resp.setAirports((List<String>) objMap.get("airports"));
+        resp.setTotalCost((Double) objMap.get("totalCost"));
         return resp;
     }
 
