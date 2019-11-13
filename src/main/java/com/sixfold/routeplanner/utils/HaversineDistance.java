@@ -2,6 +2,9 @@ package com.sixfold.routeplanner.utils;
 
 public class HaversineDistance {
 
+    private HaversineDistance() {
+    }
+
     private static final int EARTH_RADIUS = 6371;
 
     public static double distance(double startLat, double startLong, double endLat, double endLong) {

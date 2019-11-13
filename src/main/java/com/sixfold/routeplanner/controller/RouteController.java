@@ -30,7 +30,7 @@ public class RouteController {
     @GetMapping("/shortest-path")
     public ShortestPathResponse getShortestPath(@NotEmpty @NotNull @Length(max = 3) @RequestParam("startCode") String startCode,
                                                 @NotEmpty @NotNull @Length(max = 3) @RequestParam("endCode") String endCode,
-                                                @NotNull @Max(4) @Min(1) @RequestParam("stops") Integer stops)
+                                                @NotNull @Max(4) @Min(0) @RequestParam("stops") Integer stops)
             throws AppStatusException, ResultNotFoundException {
         return routeService.getShortestPath(startCode, endCode, stops);
     }
