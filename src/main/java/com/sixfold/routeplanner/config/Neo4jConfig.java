@@ -20,7 +20,12 @@ import org.springframework.data.neo4j.repository.config.EnableNeo4jRepositories;
 import org.springframework.data.neo4j.transaction.Neo4jTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Comparator;
 
 @Configuration
 @Log4j2
@@ -46,12 +51,24 @@ public class Neo4jConfig {
 
     @Bean
     public GraphDatabaseService graphDb() {
+        deleteOldDb();
         GraphDatabaseService service = new GraphDatabaseFactory()
                 .newEmbeddedDatabaseBuilder(Paths.get(dbLocation).toFile())
                 .setConfig(GraphDatabaseSettings.procedure_unrestricted, "algo.*,apoc.*")
                 .newGraphDatabase();
         createAirportNodeIndex(service);
         return service;
+    }
+
+    private void deleteOldDb() {
+        try {
+            Files.walk(Paths.get(dbLocation))
+                    .sorted(Comparator.reverseOrder())
+                    .map(Path::toFile)
+                    .forEach(File::delete);
+        } catch (IOException e) {
+            log.error(e.getCause());
+        }
     }
 
     @Bean

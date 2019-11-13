@@ -8,7 +8,7 @@ public class AppStatus {
 
     @Getter
     @Setter
-    private static String status = StatusName.STOPPED.name();
+    private static volatile String status = StatusName.STOPPED.name();
 
     private AppStatus() {
     }
