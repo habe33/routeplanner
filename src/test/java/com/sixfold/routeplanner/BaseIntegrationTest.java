@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import javax.annotation.Resource;
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,6 +35,7 @@ public class BaseIntegrationTest {
     }
 
     protected void deleteCsv() throws IOException {
+        await().atMost(5, TimeUnit.SECONDS).until(isFileNotLocked(CSV_PATH));
         Files.deleteIfExists(Paths.get(CSV_PATH));
     }
 
@@ -57,5 +59,12 @@ public class BaseIntegrationTest {
 
     private Callable<Boolean> isRunning() {
         return () -> AppStatus.getStatus().equals(StatusName.RUNNING.name());
+    }
+
+    private Callable<Boolean> isFileNotLocked(String path) {
+        return () -> {
+            File file = new File(path);
+            return file.renameTo(file);
+        };
     }
 }

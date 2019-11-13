@@ -37,7 +37,7 @@ public class Neo4jRepository {
                 "(end:Airport{iataCode:'" + endCode + "'}) " +
                 "CALL algo.kShortestPaths.stream(start, end, " + numOfKPaths + ", 'dist', {}) " +
                 "YIELD index, nodeIds, costs " +
-                "WHERE length(costs) = " + stops + " " +
+                "WHERE length(costs) = " + (stops + 1) + " " +
                 "RETURN [node in algo.getNodesById(nodeIds) | node.iataCode] AS airports, " +
                 "costs, " +
                 "toFloat(reduce(acc = 0.0, cost in costs | acc + cost)) AS totalCost " +
