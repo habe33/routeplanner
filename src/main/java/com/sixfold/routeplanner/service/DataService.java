@@ -14,7 +14,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
 import java.util.stream.Collectors;
 
 @Log4j2
@@ -31,8 +33,8 @@ public class DataService {
     private Neo4jRepository repository;
     private static final int AIRPORT_TYPE_INDEX = 1;
     private static final int AIRPORT_IATA_INDEX = 9;
-    private static final int AIRPORT_LATITUDE_INDEX = 11;
-    private static final int AIRPORT_LONGITUDE_INDEX = 12;
+    private static final int AIRPORT_LONGITUDE_INDEX = 11;
+    private static final int AIRPORT_LATITUDE_INDEX = 12;
 
     @Autowired
     public DataService(Neo4jRepository repository) {
@@ -64,7 +66,7 @@ public class DataService {
                     firstLine = false;
                     continue;
                 }
-                addAirportToList(airportData, getSplittedValues(inputStream));
+                addAirportToList(airportData, getSplittedValues(inputStream.next()));
             }
         } catch (MalformedURLException e) {
             log.error("Could not get content from {}", dataUrl);
@@ -161,8 +163,7 @@ public class DataService {
         return longitude != null && !longitude.isEmpty();
     }
 
-    private String[] getSplittedValues(Scanner inputStream) {
-        String data = inputStream.next();
+    private String[] getSplittedValues(String data) {
         return data.replace("\"", "").replace(" ", "").split(",");
     }
 }
