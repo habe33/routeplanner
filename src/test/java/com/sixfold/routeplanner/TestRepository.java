@@ -1,9 +1,7 @@
 package com.sixfold.routeplanner;
 
-import com.sixfold.routeplanner.dto.ShortestPathResponse;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Result;
-import org.neo4j.ogm.response.Response;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -25,11 +23,15 @@ public class TestRepository {
         Result res = graphDb.execute("MATCH (n) " +
                 "RETURN collect(n.iataCode) AS result; ");
         String[] columns =  {"result"};
-        return getResult(getResultMap(res, columns));
+        return (List<String>) getResultMap(res, columns).get("result");
     }
 
-    private List<String> getResult(Map<String, Object> objMap) {
-        return (List<String>) objMap.get("result");
+    public List<Double> getDistance(String startCode, String endCode) {
+        Result res = graphDb.execute(
+                "MATCH (start:Airport {iataCode : '" + startCode + "'})-[r]-(end:Airport{iataCode : '" + endCode + "'}) " +
+                        "RETURN collect(r.dist) AS result");
+        String[] columns = {"result"};
+        return (List<Double>) getResultMap(res, columns).get("result");
     }
 
     private Map<String, Object> getResultMap(Result res, String[] columns) {
