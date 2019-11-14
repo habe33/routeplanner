@@ -68,17 +68,17 @@ public class Neo4jRepository {
     }
 
     private Map<String, Object> getResultMap(Result res, String[] columns) {
-        Map<String, Object> obj = new LinkedHashMap<>();
+        Map<String, Object> resultMap = new LinkedHashMap<>();
         while (res.hasNext()) {
             Map<String, Object> row = res.next();
-            for (String t : columns) {
-                obj.put(t, null);
+            for (String colName : columns) {
+                resultMap.put(colName, null);
             }
             for (Map.Entry<String, Object> col : row.entrySet()) {
-                obj.put(col.getKey(), col.getValue());
+                resultMap.put(col.getKey(), col.getValue());
             }
         }
-        return obj;
+        return resultMap;
     }
 
     private void insertRelationships(String filePath) {

@@ -25,7 +25,7 @@ public class DataServiceTest extends BaseIntegrationTest {
     }
 
     private void validateDistances() {
-        List<Double> connectionDistances = repository.getDistance("ODS", "LED");
+        List<Double> connectionDistances = repository.getDistances("ODS", "LED");
         assertEquals(2, connectionDistances.size());
         assertEquals(1487.31, connectionDistances.get(0));
     }

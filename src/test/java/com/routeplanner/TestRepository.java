@@ -26,7 +26,7 @@ public class TestRepository {
         return (List<String>) getResultMap(res, columns).get("result");
     }
 
-    public List<Double> getDistance(String startCode, String endCode) {
+    public List<Double> getDistances(String startCode, String endCode) {
         Result res = graphDb.execute(
                 "MATCH (start:Airport {iataCode : '" + startCode + "'})-[r]-(end:Airport{iataCode : '" + endCode + "'}) " +
                         "RETURN collect(r.dist) AS result");
@@ -35,16 +35,16 @@ public class TestRepository {
     }
 
     private Map<String, Object> getResultMap(Result res, String[] columns) {
-        Map<String, Object> obj = new LinkedHashMap<>();
+        Map<String, Object> resultMap = new LinkedHashMap<>();
         while (res.hasNext()) {
             Map<String, Object> row = res.next();
-            for (String t : columns) {
-                obj.put(t, null);
+            for (String colName : columns) {
+                resultMap.put(colName, null);
             }
             for (Map.Entry<String, Object> col : row.entrySet()) {
-                obj.put(col.getKey(), col.getValue());
+                resultMap.put(col.getKey(), col.getValue());
             }
         }
-        return obj;
+        return resultMap;
     }
 }
