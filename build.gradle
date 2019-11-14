@@ -26,7 +26,6 @@ dependencies {
     implementation 'org.neo4j:neo4j:3.5.12'
     implementation 'org.neo4j:neo4j-ogm-embedded-driver:3.2.2'
     implementation 'org.neo4j:graph-algorithms-algo:3.5.4.0'
-    implementation 'net.sf.geographiclib:GeographicLib-Java:1.50'
     compileOnly 'org.projectlombok:lombok'
     annotationProcessor 'org.projectlombok:lombok'
     testImplementation('org.springframework.boot:spring-boot-starter-test') {
