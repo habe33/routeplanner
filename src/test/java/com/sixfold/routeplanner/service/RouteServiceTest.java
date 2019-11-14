@@ -38,8 +38,8 @@ public class RouteServiceTest extends BaseIntegrationTest {
         createGraph();
         ShortestPathResponse resp = routeService.getShortestPath("ODS", "LED", 0);
         assertTrue(resp.getAirports().containsAll(Arrays.asList("ODS", "LED")));
-        assertEquals(1, resp.getCosts().size());
-        assertEquals(1487.31, resp.getTotalCost());
+        assertEquals(1, resp.getDistances().size());
+        assertEquals(1487.31, resp.getTotalDistance());
     }
 
     @Test
@@ -47,8 +47,8 @@ public class RouteServiceTest extends BaseIntegrationTest {
         createGraph();
         ShortestPathResponse resp = routeService.getShortestPath("ODS", "LED", 2);
         assertTrue(resp.getAirports().containsAll(Arrays.asList("ODS", "LED")));
-        assertEquals(3, resp.getCosts().size());
-        assertEquals(7390.41, resp.getTotalCost());
+        assertEquals(3, resp.getDistances().size());
+        assertEquals(7390.41, resp.getTotalDistance());
     }
 
 }

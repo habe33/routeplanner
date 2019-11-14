@@ -60,9 +60,9 @@ public class Neo4jRepository {
 
     private ShortestPathResponse mapToResponse(Map<String, Object> objMap) {
         ShortestPathResponse resp = new ShortestPathResponse();
-        resp.setCosts((List<Double>) objMap.get("costs"));
+        resp.setDistances((List<Double>) objMap.get("costs"));
         resp.setAirports((List<String>) objMap.get("airports"));
-        resp.setTotalCost((Double) objMap.get("totalCost"));
+        resp.setTotalDistance((Double) objMap.get("totalCost"));
         return resp;
     }
 

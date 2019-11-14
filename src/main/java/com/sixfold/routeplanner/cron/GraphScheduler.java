@@ -12,16 +12,16 @@ import org.springframework.scheduling.annotation.Scheduled;
 @Configuration
 @EnableScheduling
 @Profile("!test")
-public class Scheduler {
+public class GraphScheduler {
 
     private DataService dataService;
 
     @Autowired
-    public Scheduler(DataService dataService) {
+    public GraphScheduler(DataService dataService) {
         this.dataService = dataService;
     }
 
-    @Scheduled(initialDelay = 0L, fixedRate = 4 * 60 * 60 * 1000)
+    @Scheduled(initialDelay = 0L, fixedRate = 24 * 60 * 60 * 1000)
     public void generateGraph() {
         dataService.generateGraph();
     }

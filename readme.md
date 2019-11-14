@@ -71,6 +71,22 @@ run
 gradlew bootRun
 ```
 
+## Example request
+
+```
+localhost:8080/shortest-path?startCode=TLL&endCode=LIS&stops=4
+```
+
+## Example response
+
+```
+{
+    "airports": ["TLL","HAM","BRE","CRL","CDG","LIS"],
+    "distances": [1110.0,102.0,414.0,211.0,1469.0],
+    "totalDistance":3306.0
+}
+```
+
 ## Built With
 
 * [Gradle](https://gradle.org/) - Dependency Management

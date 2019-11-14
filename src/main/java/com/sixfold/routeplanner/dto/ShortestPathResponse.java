@@ -8,6 +8,6 @@ import java.util.List;
 public class ShortestPathResponse {
 
     private List<String> airports;
-    private List<Double> costs;
-    private Double totalCost;
+    private List<Double> distances;
+    private Double totalDistance;
 }

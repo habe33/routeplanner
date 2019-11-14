@@ -35,7 +35,7 @@ public class RouteControllerTest {
         mvc.perform(get("/shortest-path?startCode=TLL&endCode=LSS&stops=4").contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().json("{ airports: [ \"TLL\", \"HAM\", \"BRE\", \"CRL\", \"CDG\", \"LIS\" ], " +
-                        "costs: [ 1110.76, 102.78, 414.33, 211.14, 1469.96 ], totalCost: 3308.97 }"));
+                        "distances: [ 1110.76, 102.78, 414.33, 211.14, 1469.96 ], totalDistance: 3308.97 }"));
     }
 
     @Test
@@ -61,8 +61,8 @@ public class RouteControllerTest {
     private ShortestPathResponse getResponse() {
         ShortestPathResponse resp = new ShortestPathResponse();
         resp.setAirports(Arrays.asList("TLL", "HAM", "BRE", "CRL", "CDG", "LIS"));
-        resp.setCosts(Arrays.asList(1110.76, 102.78, 414.33, 211.14, 1469.96));
-        resp.setTotalCost(3308.97);
+        resp.setDistances(Arrays.asList(1110.76, 102.78, 414.33, 211.14, 1469.96));
+        resp.setTotalDistance(3308.97);
         return resp;
     }
 
