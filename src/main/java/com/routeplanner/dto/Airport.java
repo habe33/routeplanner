@@ -1,23 +1,19 @@
 package com.routeplanner.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.util.Objects;
 
 @Data
+@AllArgsConstructor
 @NoArgsConstructor
 public class Airport {
 
     private String code;
     private float latitude;
     private float longitude;
-
-    public Airport(String code, float latitude, float longitude) {
-        this.code = code;
-        this.latitude = latitude;
-        this.longitude = longitude;
-    }
 
     @Override
     public boolean equals(Object o) {

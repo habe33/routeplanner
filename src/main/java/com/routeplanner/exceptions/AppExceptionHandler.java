@@ -1,7 +1,5 @@
-package com.routeplanner.controller;
+package com.routeplanner.exceptions;
 
-import com.routeplanner.exceptions.AppStatusException;
-import com.routeplanner.exceptions.ResultNotFoundException;
 import com.routeplanner.AppStatus;
 import com.routeplanner.dto.AppError;
 import org.springframework.core.Ordered;

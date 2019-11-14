@@ -56,29 +56,6 @@ public class DataService {
         repository.insertGraph(airportNodesCsvPath, airportRelationshipsCsvPath);
     }
 
-    private List<Airport> getAirportData() {
-        List<Airport> airportData = new ArrayList<>();
-        try {
-            URL content = new URL(dataUrl);
-            Scanner inputStream = getInputStream(content);
-            boolean firstLine = true;
-            while (inputStream.hasNext()) {
-                if (firstLine) {
-                    firstLine = false;
-                    continue;
-                }
-                addAirportToList(airportData, getSplittedValues(inputStream.next()));
-            }
-        } catch (MalformedURLException e) {
-            log.error("Could not get content from {}", dataUrl);
-        } catch (IOException e) {
-            log.error("Could not open content stream: {}", e.getMessage());
-        }
-        airportData = airportData.stream().distinct().collect(Collectors.toList());
-        log.debug("Loaded {} large airport nodes from {}", airportData.size(), dataUrl);
-        return airportData;
-    }
-
     private void addAirportToList(List<Airport> airportData, String[] values) {
         if (isCorrectLength(values)) {
             String airportType = values[AIRPORT_TYPE_INDEX];
@@ -90,10 +67,6 @@ public class DataService {
                 airportData.add(node);
             }
         }
-    }
-
-    private boolean isCorrectLength(String[] values) {
-        return values.length == 13;
     }
 
     private void writeNodesToCsv(List<Airport> data) {
@@ -137,11 +110,42 @@ public class DataService {
         csvWriter.flush();
     }
 
+    private List<Airport> getAirportData() {
+        List<Airport> airportData = new ArrayList<>();
+        try {
+            URL content = new URL(dataUrl);
+            Scanner inputStream = getInputStream(content);
+            boolean firstLine = true;
+            while (inputStream.hasNext()) {
+                if (firstLine) {
+                    firstLine = false;
+                    continue;
+                }
+                addAirportToList(airportData, getSplittedValues(inputStream.next()));
+            }
+        } catch (MalformedURLException e) {
+            log.error("Could not get content from {}", dataUrl);
+        } catch (IOException e) {
+            log.error("Could not open content stream: {}", e.getMessage());
+        }
+        airportData = airportData.stream().distinct().collect(Collectors.toList());
+        log.debug("Loaded {} large airport nodes from {}", airportData.size(), dataUrl);
+        return airportData;
+    }
+
     private Scanner getInputStream(URL content) throws IOException {
         Scanner inputStream = new Scanner(content.openStream());
         inputStream.useDelimiter("\n");
         inputStream.nextLine();
         return inputStream;
+    }
+
+    private String[] getSplittedValues(String data) {
+        return data.replace("\"", "").replace(" ", "").split(",");
+    }
+
+    private boolean isCorrectLength(String[] values) {
+        return values.length == 13;
     }
 
     private boolean isValidValues(String airportType, String iataCode, String latitude, String longitude) {
@@ -162,9 +166,5 @@ public class DataService {
 
     private boolean isValidLongitude(String longitude) {
         return longitude != null && !longitude.isEmpty();
-    }
-
-    private String[] getSplittedValues(String data) {
-        return data.replace("\"", "").replace(" ", "").split(",");
     }
 }
