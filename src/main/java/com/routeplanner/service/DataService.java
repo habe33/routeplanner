@@ -149,22 +149,14 @@ public class DataService {
     }
 
     private boolean isValidValues(String airportType, String iataCode, String latitude, String longitude) {
-        return isValidAirportType(airportType) && isValidIataCode(iataCode) && isValidLatitude(latitude) && isValidLongitude(longitude);
+        return isValidAirportType(airportType) && isValidString(iataCode) && isValidString(latitude) && isValidString(longitude);
     }
 
     private boolean isValidAirportType(String airportType) {
         return airportType != null && !airportType.isEmpty() && airportType.equals(LARGE_AIRPORT);
     }
 
-    private boolean isValidIataCode(String iataCode) {
-        return iataCode != null && !iataCode.isEmpty();
-    }
-
-    private boolean isValidLatitude(String latitude) {
-        return latitude != null && !latitude.isEmpty();
-    }
-
-    private boolean isValidLongitude(String longitude) {
-        return longitude != null && !longitude.isEmpty();
+    private boolean isValidString(String str) {
+        return str != null && !str.isEmpty();
     }
 }
