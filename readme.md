@@ -1,6 +1,6 @@
 # Routeplanner
 
-Application to calculate shortest path from A to B with k stops. Takes IATA codes as identifiers for airport.
+Application to calculate shortest path from A to B with k stops. Takes IATA codes as identifiers for airports.
 
 ## Getting Started
 
